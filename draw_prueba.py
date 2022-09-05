@@ -5,6 +5,7 @@ from object_detection.utils import visualization_utils as vis_util
 from shapely import geometry
 from scipy.spatial import Voronoi, ConvexHull#, voronoi_plot_2d
 import xlsxwriter
+import math
 #import matplotlib.pyplot as plt
 
 
@@ -29,7 +30,7 @@ class Drawing(object):
         new_center = int(self.image_bottom[0] - d_w)
 
         self.bottom = np.array([int(new_center),int(self.image.shape[1]/2)]) # (y,x)
-        cv2.circle(self.image, (int(self.bottom[1]), int(self.bottom[0])), 4, (0, 120, 255), -1)
+        # cv2.circle(self.image, (int(self.bottom[1]), int(self.bottom[0])), 4, (0, 120, 255), -1)
 
     def Prepare_data(self,scores,boxes,classes):
         self.scores = scores
@@ -52,54 +53,72 @@ class Drawing(object):
     def Draw_detections(self,n,H,h):
         print("------ DRAWING DETECTIONS AND OPTIMIZING PROJECTIONS ------")
 
-        def Quadrant(y,x,beta,photo,caja): # (y,x) centroid detection box
+        def Quadrant(y,x,beta,photo,caja,d1): # (y,x) centroid detection box
 
-            if x <= self.bottom[1]:
-                x_axis = np.arange(x, self.bottom[1] + 1)
-                x_axis = x_axis[::-1]
-            elif x > self.bottom[1]:
-                x_axis = np.arange(self.bottom[1], x + 1)
-            if y <= self.bottom[0]:
-                y_axis = np.arange(y,self.bottom[0]+1)
-                y_axis = y_axis[::-1]
-            elif y > self.bottom[0]:
-                y_axis = np.arange(self.bottom[0],y+1)
+            # if x <= self.bottom[1]:
+            #     x_axis = np.arange(x, self.bottom[1] + 1)
+            #     x_axis = x_axis[::-1]
+            # elif x > self.bottom[1]:
+            #     x_axis = np.arange(self.bottom[1], x + 1)
+            # if y <= self.bottom[0]:
+            #     y_axis = np.arange(y,self.bottom[0]+1)
+            #     y_axis = y_axis[::-1]
+            # elif y > self.bottom[0]:
+            #     y_axis = np.arange(self.bottom[0],y+1)
 
             zlope = (y - self.bottom[0]) / (x - self.bottom[1])
 
-            x_f = x
-            y_f = y
-            if len(x_axis) >= len(y_axis):
-                y_axis = []
-                for x in x_axis:
-                    y_axis.append((-1)*(zlope*(x_f-x)-y_f))
-
-            else:
-                x_axis = []
-                for y in y_axis:
-                    x_axis.append((-1)*((y_f-y)/zlope-x_f))
+            # x_f = x
+            # y_f = y
+            # if len(x_axis) >= len(y_axis):
+            #     y_axis = []
+            #     for x in x_axis:
+            #         y_axis.append((-1)*(zlope*(x_f-x)-y_f))
+            #
+            # else:
+            #     x_axis = []
+            #     for y in y_axis:
+            #         x_axis.append((-1)*((y_f-y)/zlope-x_f))
 
             # optimization points
             lim = 0
             beta *= (self.hipotenusa/(np.pi/2.0))
-            coords = [-100,-100]
-            for x_p,y_p in zip(x_axis,y_axis):
-                bottom2Coord = np.linalg.norm(np.array([y_p,x_p])-self.bottom)
-                #cv2.circle(photo,(int(x_p),int(y_p)),1,(255,255,0),-1)
-                if bottom2Coord<=abs(beta):
-                    if bottom2Coord>lim:
-                        lim = bottom2Coord
-                        coords = [y_p,x_p]
+            d1*=self.angle
+            beta*=(1-d1)
+
+            if x>self.bottom[1]: x*=(-1)
+            if y>self.bottom[0]: y*=(-1)
+            x_p = beta/(math.sqrt(1+zlope**2))+x
+            y_p = zlope*beta/(math.sqrt(1+zlope**2))+y
+
+            coords = [y_p,x_p]
+
+            # coords = [-100,-100]
+            # for x_p,y_p in zip(x_axis,y_axis):
+            #     # bottom2Coord = np.linalg.norm(np.array([y_p,x_p])-self.bottom)
+            #     bottom2Coord = np.linalg.norm(np.array([y_p,x_p])-np.array([y,x]))
+            #     #cv2.circle(photo,(int(x_p),int(y_p)),1,(255,255,0),-1)
+            #     if bottom2Coord<=abs(beta):
+            #         if bottom2Coord>lim:
+            #             lim = bottom2Coord
+            #             coords = [y_p,x_p]
 
             # coords y,x
-            #cv2.circle(photo,(int(coords[1]),int(coords[0])),3,(255,0,0),-1)
+
             geom_coords = geometry.Point([coords[1],coords[0]])
             if self.poly.contains(geom_coords):
                 self.rec_points.append([int(coords[0]),int(coords[1])])
                 vis_util.draw_bounding_box_on_image_array(photo,caja[0],caja[1],caja[2],caja[3],color='red',thickness=2,display_str_list=()) # HEADS
                 cv2.circle(photo,(int(coords[1]),int(coords[0])),4,(0,0,255),-1)
+                vis_util.draw_bounding_box_on_image_array(self.photo_2,caja[0],caja[1],caja[2],caja[3],color='red',thickness=2,display_str_list=()) # HEADS
+                cv2.circle(self.photo_2,(int(coords[1]),int(coords[0])),4,(0,0,255),-1)
+                cv2.line(self.photo_2,(x,y),(int(coords[1]),int(coords[0])),(0,0,0),2)
                 return(1)
-            return(0)
+            else:
+                cv2.circle(self.photo_2,(int(coords[1]),int(coords[0])),4,(0,100,255),-1)
+                cv2.circle(self.photo_2,(int(coords[1]),int(coords[0])),6,(0,0,0),3)
+                cv2.line(self.photo_2,(x,y),(int(coords[1]),int(coords[0])),(0,0,0),2)
+                return(0)
 
         people = 0
         if n==1:
@@ -109,6 +128,7 @@ class Drawing(object):
         else:
             photo = self.final_image
 
+        self.photo_2 = photo.copy()
         #cv2.circle(photo,(self.image_center[1],self.image_center[0]),7,(255,255,255),-1)
         for (puntaje,caja,clase) in zip(self.scores,self.boxes,self.classes):
             distance_x = caja[3] - caja[1]
@@ -122,16 +142,17 @@ class Drawing(object):
                 gamma = np.linalg.norm(np.array([point[1],point[0]])-self.bottom)
                 gamma *=((np.pi/2.0)/self.hipotenusa)
 
+                vis_util.draw_bounding_box_on_image_array(self.photo_2,caja[0],caja[1],caja[2],caja[3],color='blue',thickness=2,display_str_list=()) # wheelchair
+
                 d1_prima = np.tan(gamma)*H
                 d1 = d1_prima - np.tan(gamma)*h
                 alpha = np.arctan(d1/H)
                 beta = gamma - alpha
-                people+=Quadrant(int(point[1]),int(point[0]),float(beta),photo,caja)
+                print(d1)
+                people+=Quadrant(int(point[1]),int(point[0]),float(beta),photo,caja,d1)
             elif (puntaje>=self.min_score) and (clase==2.0): # wheelchair
                 vis_util.draw_bounding_box_on_image_array(photo,caja[0],caja[1],caja[2],caja[3],color='blue',thickness=2,display_str_list=()) # wheelchair
             elif (puntaje>=self.min_score) and (clase==4.0): # added heads
-                #cv2.namedWindow('Draw Projections')
-                #cv2.setMouseCallback('Draw Projections',draw_circle)
                 people+=1
                 vis_util.draw_bounding_box_on_image_array(photo, caja[0], caja[1], caja[2], caja[3], color='red',thickness=2, display_str_list=())  # heads
 
@@ -142,35 +163,38 @@ class Drawing(object):
 
     def Generate_Polygon(self, nameWindow):
 
-        def draw_circle(event,x,y,flags,param):
-            global mouseX,mouseY
-            if event == cv2.EVENT_LBUTTONDBLCLK:
-                cv2.circle(self.copy_image,(x,y),6,(0,255,255),-1)
-                mouseX,mouseY = x,y
+        # def draw_circle(event,x,y,flags,param):
+        #     global mouseX,mouseY
+        #     if event == cv2.EVENT_LBUTTONDBLCLK:
+        #         cv2.circle(self.copy_image,(x,y),6,(0,255,255),-1)
+        #         mouseX,mouseY = x,y
+        # if active == 0:
+        #     cv2.namedWindow(nameWindow)
+        #     cv2.setMouseCallback(nameWindow,draw_circle)
+        #     points = []
+        #     point_counter = 0
+        #     while(1):
+        #         cv2.imshow(nameWindow,self.copy_image)
+        #         k = cv2.waitKey(20) & 0xFF
+        #         if k == 27:
+        #             break
+        #         elif k == ord('a'):
+        #             point_counter+=1
+        #             points.append([mouseX,mouseY])
+        #             cv2.circle(self.copy_image,(mouseX,mouseY),8,(0,0,0),3)
+        #             cv2.putText(self.copy_image, str(point_counter), (mouseX,mouseY-5), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 1)
+        #         elif k == ord('r'):
+        #             for i,c in zip(points,np.arange(1,point_counter+1)):
+        #                 cv2.circle(self.copy_image,(i[0],i[1]),8,(255,255,255),-1)
+        #                 cv2.line(self.copy_image,(i[0]-6,i[1]-6),(i[0]+6,i[1]+6),(0,0,0),2)
+        #                 cv2.line(self.copy_image,(i[0]+6,i[1]-6),(i[0]-6,i[1]+6),(0,0,0),2)
+        #                 cv2.putText(self.copy_image, str(c), (i[0],i[1]-5), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 1)
+        #             points = []
+        #             point_counter = 0
+        #     cv2.destroyAllWindows()
 
-        cv2.namedWindow(nameWindow)
-        cv2.setMouseCallback(nameWindow,draw_circle)
-        points = []
-        point_counter = 0
-        while(1):
-            cv2.imshow(nameWindow,self.copy_image)
-            k = cv2.waitKey(20) & 0xFF
-            if k == 27:
-                break
-            elif k == ord('a'):
-                point_counter+=1
-                points.append([mouseX,mouseY])
-                cv2.circle(self.copy_image,(mouseX,mouseY),8,(0,0,0),3)
-                cv2.putText(self.copy_image, str(point_counter), (mouseX,mouseY-5), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 1)
-            elif k == ord('r'):
-                for i,c in zip(points,np.arange(1,point_counter+1)):
-                    cv2.circle(self.copy_image,(i[0],i[1]),8,(255,255,255),-1)
-                    cv2.line(self.copy_image,(i[0]-6,i[1]-6),(i[0]+6,i[1]+6),(0,0,0),2)
-                    cv2.line(self.copy_image,(i[0]+6,i[1]-6),(i[0]-6,i[1]+6),(0,0,0),2)
-                    cv2.putText(self.copy_image, str(c), (i[0],i[1]-5), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 1)
-                points = []
-                point_counter = 0
-        cv2.destroyAllWindows()
+
+        points = [[361,182],[806,152],[876,490],[317,520]]
 
         self.poly = geometry.Polygon(points)
         self.centroid = np.array(list(self.poly.centroid.coords)[0]) # x,y
@@ -193,6 +217,9 @@ class Drawing(object):
         self.poly_points_shift.append(points[0])
 
         self.bottom[1] = int(self.centroid[0])
+
+        cv2.circle(self.image, (int(self.bottom[1]), int(self.bottom[0])), 4, (0, 120, 255), -1)
+
 
         return(points)
 
@@ -284,7 +311,7 @@ class Drawing(object):
             self.classes = self.classes
             self.boxes = self.boxes
 
-    def Voronoi_diagram(self,image,output_variable,original_area,n_people):
+    def Voronoi_diagram(self,image,output_variable,original_area,n_people,folder):
 
         if n_people!=1:
             rec_points, uniq_cnt = np.unique(self.rec_points, axis=0, return_counts=True)
@@ -361,6 +388,7 @@ class Drawing(object):
                     polygon_area += hull.volume
                     polygon_number+=1
                     cv2.putText(image, str(polygon_number), (int(round(cx-10)),int(round(cy+10))), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,255), 1, cv2.LINE_AA)
+                    cv2.putText(self.photo_2, str(polygon_number), (int(round(cx-10)),int(round(cy+10))), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,255), 1, cv2.LINE_AA)
         else:
             rec_points = np.array([[1]])
         #fig.savefig('fig.jpg')
@@ -368,8 +396,18 @@ class Drawing(object):
         avg_density = float(original_area/rec_points.shape[0])
         print('AVERAGE DENSITY =', avg_density, 'm2/passenger')
 
-        cv2.imwrite(output_variable,image)
-        workbook = xlsxwriter.Workbook(output_variable.split('.')[0]+'.xlsx')
+
+        # if int(folder)==int(n_people):
+        #     answer = 'CORRECT'
+        # else:
+        #     answer = 'WRONG'
+
+        # out = output_variable.split('.')[0]+'_'+str(folder)+'_'+str(n_people)+'_'+answer+'.'+output_variable.split('.')[1]
+        out = output_variable
+        out_2 = output_variable.split('.')[0]+'_debug.'+output_variable.split('.')[1]
+        cv2.imwrite(out,image)
+        cv2.imwrite(out_2,self.photo_2)
+        workbook = xlsxwriter.Workbook(out.split('.')[0]+'.xlsx')
         worksheet = workbook.add_worksheet()
 
         worksheet.set_column('A:A', 25)
@@ -380,7 +418,7 @@ class Drawing(object):
         worksheet.write('A3', 'Average Density = ')
         worksheet.write('B2',str(original_area))
         worksheet.write('B3',str(avg_density))
-        worksheet.insert_image('C2', output_variable)
+        worksheet.insert_image('C2', out)
 
         if n_people!=1:
             A = 4
@@ -391,6 +429,6 @@ class Drawing(object):
                 A+=1
 
         workbook.close()
-        cv2.imshow('Area selection',image)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        #cv2.imshow('Area selection',image)
+        #cv2.waitKey(0)
+        #cv2.destroyAllWindows()
