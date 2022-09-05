@@ -55,55 +55,20 @@ class Drawing(object):
 
         def Quadrant(y,x,beta,photo,caja,d1): # (y,x) centroid detection box
 
-            # if x <= self.bottom[1]:
-            #     x_axis = np.arange(x, self.bottom[1] + 1)
-            #     x_axis = x_axis[::-1]
-            # elif x > self.bottom[1]:
-            #     x_axis = np.arange(self.bottom[1], x + 1)
-            # if y <= self.bottom[0]:
-            #     y_axis = np.arange(y,self.bottom[0]+1)
-            #     y_axis = y_axis[::-1]
-            # elif y > self.bottom[0]:
-            #     y_axis = np.arange(self.bottom[0],y+1)
+            zlope = abs((y - self.bottom[0]) / (x - self.bottom[1]))
 
-            zlope = (y - self.bottom[0]) / (x - self.bottom[1])
-
-            # x_f = x
-            # y_f = y
-            # if len(x_axis) >= len(y_axis):
-            #     y_axis = []
-            #     for x in x_axis:
-            #         y_axis.append((-1)*(zlope*(x_f-x)-y_f))
-            #
-            # else:
-            #     x_axis = []
-            #     for y in y_axis:
-            #         x_axis.append((-1)*((y_f-y)/zlope-x_f))
-
-            # optimization points
-            lim = 0
             beta *= (self.hipotenusa/(np.pi/2.0))
             d1*=self.angle
             beta*=(1-d1)
 
-            if x>self.bottom[1]: x*=(-1)
-            if y>self.bottom[0]: y*=(-1)
-            x_p = beta/(math.sqrt(1+zlope**2))+x
-            y_p = zlope*beta/(math.sqrt(1+zlope**2))+y
+            factor_x = beta/(math.sqrt(1+zlope**2))
+            factor_y = zlope*beta/(math.sqrt(1+zlope**2))
+            if x>self.bottom[1]: factor_x*=(-1)
+            if y>self.bottom[0]: factor_y*=(-1)
+            x_p = factor_x+x
+            y_p = factor_y+y
 
-            coords = [y_p,x_p]
-
-            # coords = [-100,-100]
-            # for x_p,y_p in zip(x_axis,y_axis):
-            #     # bottom2Coord = np.linalg.norm(np.array([y_p,x_p])-self.bottom)
-            #     bottom2Coord = np.linalg.norm(np.array([y_p,x_p])-np.array([y,x]))
-            #     #cv2.circle(photo,(int(x_p),int(y_p)),1,(255,255,0),-1)
-            #     if bottom2Coord<=abs(beta):
-            #         if bottom2Coord>lim:
-            #             lim = bottom2Coord
-            #             coords = [y_p,x_p]
-
-            # coords y,x
+            coords = [y_p,x_p] # coords y,x
 
             geom_coords = geometry.Point([coords[1],coords[0]])
             if self.poly.contains(geom_coords):

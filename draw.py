@@ -5,6 +5,7 @@ from object_detection.utils import visualization_utils as vis_util
 from shapely import geometry
 from scipy.spatial import Voronoi, ConvexHull#, voronoi_plot_2d
 import xlsxwriter
+import math
 #import matplotlib.pyplot as plt
 
 
@@ -52,46 +53,23 @@ class Drawing(object):
     def Draw_detections(self,n,H,h):
         print("------ DRAWING DETECTIONS AND OPTIMIZING PROJECTIONS ------")
 
-        def Quadrant(y,x,beta,photo,caja): # (y,x) centroid detection box
+        def Quadrant(y,x,beta,photo,caja,d1): # (y,x) centroid detection box
 
-            if x <= self.bottom[1]:
-                x_axis = np.arange(x, self.bottom[1] + 1)
-                x_axis = x_axis[::-1]
-            elif x > self.bottom[1]:
-                x_axis = np.arange(self.bottom[1], x + 1)
-            if y <= self.bottom[0]:
-                y_axis = np.arange(y,self.bottom[0]+1)
-                y_axis = y_axis[::-1]
-            elif y > self.bottom[0]:
-                y_axis = np.arange(self.bottom[0],y+1)
+            zlope = abs((y - self.bottom[0]) / (x - self.bottom[1]))
 
-            zlope = (y - self.bottom[0]) / (x - self.bottom[1])
-
-            x_f = x
-            y_f = y
-            if len(x_axis) >= len(y_axis):
-                y_axis = []
-                for x in x_axis:
-                    y_axis.append((-1)*(zlope*(x_f-x)-y_f))
-
-            else:
-                x_axis = []
-                for y in y_axis:
-                    x_axis.append((-1)*((y_f-y)/zlope-x_f))
-
-            # optimization points
-            lim = 0
             beta *= (self.hipotenusa/(np.pi/2.0))
-            coords = [-100,-100]
-            for x_p,y_p in zip(x_axis,y_axis):
-                bottom2Coord = np.linalg.norm(np.array([y_p,x_p])-self.bottom)
-                #cv2.circle(photo,(int(x_p),int(y_p)),1,(255,255,0),-1)
-                if bottom2Coord<=abs(beta):
-                    if bottom2Coord>lim:
-                        lim = bottom2Coord
-                        coords = [y_p,x_p]
+            d1*=self.angle
+            beta*=(1-d1)
 
-            # coords y,x
+            factor_x = beta/(math.sqrt(1+zlope**2))
+            factor_y = zlope*beta/(math.sqrt(1+zlope**2))
+            if x>self.bottom[1]: factor_x*=(-1)
+            if y>self.bottom[0]: factor_y*=(-1)
+            x_p = factor_x+x
+            y_p = factor_y+y
+
+            coords = [y_p,x_p] # coords y,x
+
             #cv2.circle(photo,(int(coords[1]),int(coords[0])),3,(255,0,0),-1)
             geom_coords = geometry.Point([coords[1],coords[0]])
             if self.poly.contains(geom_coords):
@@ -126,7 +104,7 @@ class Drawing(object):
                 d1 = d1_prima - np.tan(gamma)*h
                 alpha = np.arctan(d1/H)
                 beta = gamma - alpha
-                people+=Quadrant(int(point[1]),int(point[0]),float(beta),photo,caja)
+                people+=Quadrant(int(point[1]),int(point[0]),float(beta),photo,caja,d1)
             elif (puntaje>=self.min_score) and (clase==2.0): # wheelchair
                 vis_util.draw_bounding_box_on_image_array(photo,caja[0],caja[1],caja[2],caja[3],color='blue',thickness=2,display_str_list=()) # wheelchair
             elif (puntaje>=self.min_score) and (clase==4.0): # added heads
