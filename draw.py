@@ -25,12 +25,12 @@ class Drawing(object):
         self.angle = angle
 
         self.hipotenusa = (self.image.shape[0]**2+self.image.shape[1]**2)**(1/2)
-        v_fov = (np.pi/2.0)/self.hipotenusa*self.image.shape[0]
-        d_w = self.image.shape[0] * self.angle / (v_fov)
-        new_center = int(self.image_bottom[0] - d_w)
+        # v_fov = (np.pi/2.0)/self.hipotenusa*self.image.shape[0]
+        # d_w = self.image.shape[0] * self.angle / (v_fov)
+        # new_center = int(self.image_bottom[0] - d_w)
 
-        self.bottom = np.array([int(new_center),int(self.image.shape[1]/2)]) # (y,x)
-        cv2.circle(self.image, (int(self.bottom[1]), int(self.bottom[0])), 4, (0, 120, 255), -1)
+        # self.bottom = np.array([int(new_center),int(self.image.shape[1]/2)]) # (y,x)
+        # cv2.circle(self.image, (int(self.bottom[1]), int(self.bottom[0])), 4, (0, 120, 255), -1)
 
     def Prepare_data(self,scores,boxes,classes):
         self.scores = scores
@@ -49,6 +49,9 @@ class Drawing(object):
         loc_top2 = check_details[loc[0][0],loc[0][1]+1]
         self.classes[self.classes==2.0]=0.0 #16.0
         self.classes[loc_top2[0]]=2.0
+
+
+        self.bottom = np.array([int(self.centroid[1]+self.image.shape[0]*self.angle),self.centroid[0]])
 
     def Draw_detections(self,n,H,h):
         print("------ DRAWING DETECTIONS AND OPTIMIZING PROJECTIONS ------")
@@ -77,7 +80,12 @@ class Drawing(object):
                 vis_util.draw_bounding_box_on_image_array(photo,caja[0],caja[1],caja[2],caja[3],color='red',thickness=2,display_str_list=()) # HEADS
                 cv2.circle(photo,(int(coords[1]),int(coords[0])),4,(0,0,255),-1)
                 return(1)
-            return(0)
+            else:
+                cv2.circle(photo,(int(coords[1]),int(coords[0])),4,(0,100,255),-1)
+                cv2.circle(photo,(int(coords[1]),int(coords[0])),6,(0,0,0),3)
+                cv2.line(photo,(x,y),(int(coords[1]),int(coords[0])),(0,0,0),2)
+                return(0)
+            # return(0)
 
         people = 0
         if n==1:
@@ -104,6 +112,7 @@ class Drawing(object):
                 d1 = d1_prima - np.tan(gamma)*h
                 alpha = np.arctan(d1/H)
                 beta = gamma - alpha
+                vis_util.draw_bounding_box_on_image_array(photo,caja[0],caja[1],caja[2],caja[3],color='blue',thickness=2,display_str_list=())
                 people+=Quadrant(int(point[1]),int(point[0]),float(beta),photo,caja,d1)
             elif (puntaje>=self.min_score) and (clase==2.0): # wheelchair
                 vis_util.draw_bounding_box_on_image_array(photo,caja[0],caja[1],caja[2],caja[3],color='blue',thickness=2,display_str_list=()) # wheelchair
@@ -170,7 +179,7 @@ class Drawing(object):
         self.poly_points_shift = [ p for p in points[1:]]
         self.poly_points_shift.append(points[0])
 
-        self.bottom[1] = int(self.centroid[0])
+        # self.bottom[1] = int(self.centroid[0])
 
         return(points)
 

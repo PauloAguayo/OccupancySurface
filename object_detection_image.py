@@ -140,7 +140,11 @@ print('-------------------------------------------------------------------------
 print('PASSENGERS DETECTED =',detections_1)
 
 # Drawing polygon and its centroid
-cv2.circle(copy_image,(int(centroid[0]),int(centroid[1])),6,(0,255,255),-1)
+
+new_y = int(centroid[1]+image.shape[0]*angle)
+cv2.circle(copy_image,(int(centroid[0]),new_y),6,(0,255,255),-1)
+
+# cv2.circle(copy_image,(int(centroid[0]),int(centroid[1])),6,(0,255,255),-1)
 pts = pts.reshape((-1,1,2))
 cv2.polylines(copy_image,[pts],True,(0,255,255))
 cv2.polylines(image,[pts],True,(0,255,255))
@@ -161,7 +165,7 @@ detections_2 = draws.Draw_detections(1,camera_height,people_height)
 
 people = int(detections_2)
 if people > 1:
-    polygon_area = draws.Voronoi_diagram(image,output_variable,outcomes.Telling()) ## in slf
+    polygon_area = draws.Voronoi_diagram(image,output_variable,outcomes.Telling(),detections_2) ## in slf
 
 cv2.imshow('Image',image)
 cv2.waitKey(0)
