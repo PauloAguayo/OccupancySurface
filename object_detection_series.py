@@ -9,6 +9,7 @@ from draw_prueba import Drawing
 from outcomes import Outcomes
 from calibrate import Calibration
 import os
+import csv
 
 # Parser arguments
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -77,98 +78,114 @@ resized = (int(vargs["resize"].split(',')[0]),int(vargs["resize"].split(',')[1])
 active = 0
 log_0 = []
 log_error = []
-for img in os.listdir(os.path.join(PATH_TO_IMAGE)):
-    if img.endswith('png'):
-        try:
-            print(img)
-            image = cv2.imread(os.path.join(PATH_TO_IMAGE,img))
+dict_metrics = {}
+print(PATH_TO_IMAGE)
+for folder in os.listdir(os.path.join(PATH_TO_IMAGE)):
+    try:
+        if int(folder):
+            fold = 0
+            contador = 0
+            for img in os.listdir(os.path.join(PATH_TO_IMAGE,folder)):
+                if img.endswith('jpg'):
+                    try:
+                        print(img)
+                        contador+=1
+                        image = cv2.imread(os.path.join(PATH_TO_IMAGE,folder,img))
 
-            if resized[0]==1:
-                resized = image.shape[:2]
+                        if resized[0]==1:
+                            resized = image.shape[:2]
 
-            image = cv2.resize(image, (resized[1],resized[0]), interpolation = cv2.INTER_AREA)
+                        image = cv2.resize(image, (resized[1],resized[0]), interpolation = cv2.INTER_AREA)
 
-            print('-------------------------------------------------------------------------')
-            if vargs["calibration"] == True:
-                calibration = Calibration([resized[1],resized[0]])
-                calibration.Checkboard()
-                balance = 1
-                image_calib = image.copy()
-                image = calibration.Undistort(image,balance)
+                        print('-------------------------------------------------------------------------')
+                        if vargs["calibration"] == True:
+                            calibration = Calibration([resized[1],resized[0]])
+                            calibration.Checkboard()
+                            balance = 1
+                            image_calib = image.copy()
+                            image = calibration.Undistort(image,balance)
 
-            # Calling objects
-            if active==0:
-                outcomes = Outcomes()
-                measures = Measurements(outcomes.Telling())
-            else:
-                outcomes = outcomes
-                measures = measures
+                        # Calling objects
+                        if active==0:
+                            outcomes = Outcomes()
+                            measures = Measurements(outcomes.Telling())
+                        else:
+                            outcomes = outcomes
+                            measures = measures
 
-            # Auxiliary copies
-            copy_image = image.copy()
-            final_image = image.copy()
+                        # Auxiliary copies
+                        copy_image = image.copy()
+                        final_image = image.copy()
 
-            # Expanding image dimensions to have shape: [1, None, None, 3]
-            image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            image_expanded = np.expand_dims(image_rgb, axis=0)
+                        # Expanding image dimensions to have shape: [1, None, None, 3]
+                        image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+                        image_expanded = np.expand_dims(image_rgb, axis=0)
 
-            # Object to draw detections
-            draws = Drawing(outcomes.Telling(),image,copy_image,final_image,vargs["threshold"],angle)
+                        # Object to draw detections
+                        draws = Drawing(outcomes.Telling(),image,copy_image,final_image,vargs["threshold"],angle)
 
-            # Get polygon and centroid points
+                        # Get polygon and centroid points
 
-            pts = np.array(draws.Generate_Polygon('Image '+vargs["input"]), np.int32)
+                        pts = np.array(draws.Generate_Polygon('Image '+vargs["input"]), np.int32)
 
-            poly = geometry.Polygon(pts)
-            centroid = np.array(list(poly.centroid.coords)[0])
+                        poly = geometry.Polygon(pts)
+                        centroid = np.array(list(poly.centroid.coords)[0])
 
-            # Perform the actual detection by running the model with the image as input
-            (boxes, scores, classes, num) = sess.run(
-                [detection_boxes, detection_scores, detection_classes, num_detections],
-                feed_dict={image_tensor: image_expanded})
+                        # Perform the actual detection by running the model with the image as input
+                        (boxes, scores, classes, num) = sess.run(
+                            [detection_boxes, detection_scores, detection_classes, num_detections],
+                            feed_dict={image_tensor: image_expanded})
 
-            # Reshaping useful arrays about details of detections
-            boxes = boxes.reshape(boxes.shape[1],4)
-            scores = scores.reshape(scores.shape[1],1)
-            classes = classes.reshape(classes.shape[1],1)
+                        # Reshaping useful arrays about details of detections
+                        boxes = boxes.reshape(boxes.shape[1],4)
+                        scores = scores.reshape(scores.shape[1],1)
+                        classes = classes.reshape(classes.shape[1],1)
 
-            draws.Prepare_data(scores,boxes,classes)
+                        draws.Prepare_data(scores,boxes,classes)
 
-            # First detections
-            detections_1 = draws.Draw_detections(1,camera_height,people_height)
-            print('-------------------------------------------------------------------------')
-            print('PASSENGERS DETECTED =',detections_1)
+                        # First detections
+                        detections_1 = draws.Draw_detections(1,camera_height,people_height)
+                        print('-------------------------------------------------------------------------')
+                        print('PASSENGERS DETECTED =',detections_1)
 
-            # Drawing polygon and its centroid
-            cv2.circle(copy_image,(int(centroid[0]),int(centroid[1])),6,(0,255,255),-1)
-            pts = pts.reshape((-1,1,2))
-            cv2.polylines(copy_image,[pts],True,(0,255,255))
-            cv2.polylines(image,[pts],True,(0,255,255))
-            #cv2.imshow('Area selection',copy_image)
-            #cv2.waitKey(0)
-            #cv2.destroyAllWindows()
+                        # Drawing polygon and its centroid
+                        cv2.circle(copy_image,(int(centroid[0]),int(centroid[1])),6,(0,255,255),-1)
+                        pts = pts.reshape((-1,1,2))
+                        cv2.polylines(copy_image,[pts],True,(0,255,255))
+                        cv2.polylines(image,[pts],True,(0,255,255))
+                        #cv2.imshow('Area selection',copy_image)
+                        #cv2.waitKey(0)
+                        #cv2.destroyAllWindows()
 
-            people = int(detections_1)
-            output_variable_def = os.path.join(output_variable,img)
+                        people = int(detections_1)
+                        output_variable_def = os.path.join(output_variable,img)
 
-            print(output_variable)
-            if people >= 1:
-                polygon_area = draws.Voronoi_diagram(image,output_variable_def,outcomes.Telling(),people,1)#folder) ## in slf
-            else:
-                # log_0.append(img.split('.')[0]+'_'+str(folder)+'_'+str(people)+'.'+img.split('.')[1])
-                log_0.append(img)
+                        empirical_e = float(outcomes.Telling()/people)
 
-
-        #cv2.imshow('Image',image)
-        #cv2.waitKey(0)
-        #cv2.destroyAllWindows()
-
-
+                        fold += outcomes.percentage_error(int(folder),empirical_e)
 
 
-            active+=1
-        except:
-            log_error.append(img)
+                        print(output_variable)
+                        if people >= 1:
+                            polygon_area = draws.Voronoi_diagram(image,output_variable_def,outcomes.Telling(),people,folder) ## in slf
+                        else:
+                            # log_0.append(img.split('.')[0]+'_'+str(folder)+'_'+str(people)+'.'+img.split('.')[1])
+                            log_0.append(img)
+
+                    #cv2.imshow('Image',image)
+                    #cv2.waitKey(0)
+                    #cv2.destroyAllWindows()
+
+
+
+
+                        active+=1
+                    except:
+                        log_error.append(img)
+            dict_metrics[str(folder)] = fold/contador
+
+    except:
+        continue
 
 with open('results/sequence_log_0.txt', 'w') as f:
     for line in log_0:
@@ -180,9 +197,15 @@ with open('results/sequence_log_error.txt', 'w') as f:
         f.write(line)
         f.write('\n')
 
+w = csv.writer(open("output_metrics.csv", "w"))
+for key, val in dict_metrics.items():
+
+    # write every key and value to file
+    w.writerow([key, val])
+
 
 # 2nd calculations (refinement)
-print('PASSENGERS DETECTED =',people)
+# print('PASSENGERS DETECTED =',people)
 print('------------------------------------------------------------------------')
 print("PROGRAM FINISHED")
 print('-------------------------------------------------------------------------')

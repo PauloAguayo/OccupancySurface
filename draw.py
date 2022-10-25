@@ -81,9 +81,9 @@ class Drawing(object):
                 cv2.circle(photo,(int(coords[1]),int(coords[0])),4,(0,0,255),-1)
                 return(1)
             else:
-                cv2.circle(photo,(int(coords[1]),int(coords[0])),4,(0,100,255),-1)
-                cv2.circle(photo,(int(coords[1]),int(coords[0])),6,(0,0,0),3)
-                cv2.line(photo,(x,y),(int(coords[1]),int(coords[0])),(0,0,0),2)
+                #cv2.circle(photo,(int(coords[1]),int(coords[0])),4,(0,100,255),-1)
+                #cv2.circle(photo,(int(coords[1]),int(coords[0])),6,(0,0,0),3)
+                #cv2.line(photo,(x,y),(int(coords[1]),int(coords[0])),(0,0,0),2)
                 return(0)
             # return(0)
 
@@ -264,7 +264,7 @@ class Drawing(object):
             clss = np.array(clss)
             # np.where(/self.classes == 2.0, self.classes, 0*self.classes+3.0)
             self.classes = np.concatenate((self.classes,clss))
-            scr = np.array(scr)
+            scr = np.array(scr)(0,255,0)
             self.scores = np.concatenate((self.scores,scr))
         except:
             self.scores = self.scores
@@ -308,7 +308,7 @@ class Drawing(object):
                     if en==0:
                         cv2.polylines(image,[pts],True,(0,255,0))
                     else:
-                        cv2.polylines(image,[pts],True,(0,0,255))
+                        cv2.polylines(image,[pts],True,(0,255,0)) # (0,0,255)
 
                     hull = ConvexHull(po)
 

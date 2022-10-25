@@ -362,13 +362,13 @@ class Drawing(object):
         print('AVERAGE DENSITY =', avg_density, 'm2/passenger')
 
 
-        # if int(folder)==int(n_people):
-        #     answer = 'CORRECT'
-        # else:
-        #     answer = 'WRONG'
+        if int(folder)==int(n_people):
+            answer = 'CORRECT'
+        else:
+            answer = 'WRONG'
 
-        # out = output_variable.split('.')[0]+'_'+str(folder)+'_'+str(n_people)+'_'+answer+'.'+output_variable.split('.')[1]
-        out = output_variable
+        out = output_variable.split('.')[0]+'_'+str(folder)+'_'+str(n_people)+'_'+answer+'.'+output_variable.split('.')[1]
+        # out = output_variable
         out_2 = output_variable.split('.')[0]+'_debug.'+output_variable.split('.')[1]
         cv2.imwrite(out,image)
         cv2.imwrite(out_2,self.photo_2)
