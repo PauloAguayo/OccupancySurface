@@ -1,6 +1,6 @@
 # OccupancySurface
 
-## Install
+## Install Libraries
 
 The instructions are for Anaconda environments:<br>
 
