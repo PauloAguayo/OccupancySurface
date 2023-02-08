@@ -4,7 +4,7 @@
 
 The instructions are for Anaconda environments:
 
-conda create -n OccS_env python=3.6
+conda create -n OccS_env python=3.6 <br>
 conda activate OccS_env
 conda install -c conda-forge tensorflow-gpu=1.14
 conda install -c conda-forge opencv
