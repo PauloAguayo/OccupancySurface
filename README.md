@@ -14,7 +14,7 @@ conda install -c conda-forge xlsxwriter<br>
 
 ## Instructions
 
-"-m", "--model", required=True -> "path to object detection model (inference graph)
+* -m, "--model", required=True -> "path to object detection model (inference graph)
 "-l", "--labels", required=True, help="path to labels file")
 "-i", "--input", default=0, type=str, help="path to optional input image file", required=True)
 "-o", "--output", type=str, default="results/output.jpg", help="path and name to optional output image file")
