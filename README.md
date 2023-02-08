@@ -13,3 +13,5 @@ conda install -c conda-forge matplotlib<br>
 conda install -c conda-forge xlsxwriter<br>
 
 ## Instructions
+
+### Step 0
