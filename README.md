@@ -12,9 +12,9 @@ conda install -c conda-forge shapely<br>
 conda install -c conda-forge matplotlib<br>
 conda install -c conda-forge xlsxwriter<br>
 
-## Instructions
+## Parser Instructions
 
-* -m, "--model", required=True -> "path to object detection model (inference graph)
+* Model: -m, --model, required=True -> path to object detection model (inference graph)<br>
 "-l", "--labels", required=True, help="path to labels file")
 "-i", "--input", default=0, type=str, help="path to optional input image file", required=True)
 "-o", "--output", type=str, default="results/output.jpg", help="path and name to optional output image file")
