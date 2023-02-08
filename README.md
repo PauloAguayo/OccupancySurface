@@ -14,4 +14,17 @@ conda install -c conda-forge xlsxwriter<br>
 
 ## Instructions
 
+"-m", "--model", required=True -> "path to object detection model (inference graph)
+"-l", "--labels", required=True, help="path to labels file")
+"-i", "--input", default=0, type=str, help="path to optional input image file", required=True)
+"-o", "--output", type=str, default="results/output.jpg", help="path and name to optional output image file")
+"-t", "--threshold", type=float, default=0.8, help="minimum probability to filter weak detection")
+"-c", "--calibration", action="store_true", help="option for un-distort input image")
+"-r", "--resize", type=str, default="1,1", help="resize input image")
+"-H", "--camera_height", type=float, default=2.5, help="z-coordinate for camera positioning")
+"-p", "--people_height", type=float, default=1.7, help="z-coordinate for people high")
+"-a", "--angle", type=float, default=14, help="positioning angle in degrees")
+
 ### Step 0
+
+
